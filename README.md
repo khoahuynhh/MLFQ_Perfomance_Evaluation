@@ -66,5 +66,6 @@ print(result)
   3. Tích hợp giao diện CLI để quét nhiều cấu hình và xuất biểu đồ.
 
 ## Giấy phép
-Chưa có giấy phép cụ thể; cập nhật theo nhu cầu của bạn trước khi public.
+VNUHCM - Ho Chi Minh City University of Technology
+Midnight Quarry Group Members
 
