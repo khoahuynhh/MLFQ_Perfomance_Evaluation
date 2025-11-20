@@ -146,6 +146,7 @@ class StatisticsCollector:
     def __init__(self):
         self.wait_times: List[float] = []
         self.turnaround_times: List[float] = []
+        self.boost_events: int = 0  # count of priority boosts
 
     def record_wait_time(self, t: float) -> None:
         self.wait_times.append(t)
@@ -161,6 +162,7 @@ class StatisticsCollector:
             "average_wait_time": avg_wait,
             "average_turnaround_time": avg_turn,
             "num_jobs": num,
+            "boost_events": self.boost_events,
         }
 
 
@@ -374,6 +376,7 @@ class CPUScheduler:
         while True:
             yield self.env.timeout(self.s_period)
             # Move all jobs in Q2 and Q3 back to Q1
+            self.stats.boost_events += 1
             for level in [1, 2]:  # indices for Q2, Q3
                 queue = self.queues[level]
                 while not queue.is_empty():
