@@ -3,7 +3,7 @@
 Trình mô phỏng **Multi-Level Feedback Queue (MLFQ)** này được viết bằng Python/SimPy để đánh giá các chiến lược lập lịch CPU đa cấp trên các bộ xử lý đa lõi. Hệ thống tạo tải công việc Poisson, xử lý bằng ba hàng đợi ưu tiên (Q1, Q2, Q3) và thu thập thống kê thời gian chờ cùng thời gian hoàn tất cho từng tiến trình.
 
 ## Tính năng chính
-- Ba mức ưu tiên với RR ở Q1/Q2 và FCFS ở Q3, hỗ trợ khấu trừ thời lượng theo quantum.
+- Ba mức ưu tiên với Round-Robin ở Q1/Q2 và First-Come, First-Served ở Q3, hỗ trợ khấu trừ thời lượng theo quantum.
 - Cơ chế ưu tiên định kỳ (priority boost) nhằm tránh đói CPU cho các tiến trình mức thấp.
 - Mô phỏng đa lõi: mỗi `Core` chạy như một tiến trình SimPy độc lập, có thể bị ngắt/chiếm quyền.
 - Tùy chọn mô hình I/O: xác suất tiến trình phát sinh I/O và thời gian I/O theo phân bố mũ.
@@ -66,5 +66,6 @@ print(result)
   3. Tích hợp giao diện CLI để quét nhiều cấu hình và xuất biểu đồ.
 
 ## Giấy phép
-Chưa có giấy phép cụ thể; cập nhật theo nhu cầu của bạn trước khi public.
+VNUHCM - Ho Chi Minh City University of Technology
+Midnight Quarry Group Members
 
