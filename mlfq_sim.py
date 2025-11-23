@@ -1,5 +1,5 @@
 """
-mlfq_simulation.py
+mlfq_sim.py
 --------------------
 **SUMMARY**:
 
@@ -72,8 +72,10 @@ parameter combinations to understand its behavior under various workloads.
 
 """
 
+import argparse
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
+from scenario import ALL_SCENARIOS
 import random
 import simpy
 
@@ -143,7 +145,8 @@ class ProcessQueue:
 class StatisticsCollector:
     """Collects and computes performance metrics for the MLFQ simulation."""
 
-    def __init__(self):
+    def __init__(self, lam: float | None = None):
+        self.lam: float | None = lam
         self.wait_times: List[float] = []
         self.turnaround_times: List[float] = []
         self.boost_events: int = 0  # count of priority boosts
@@ -158,11 +161,13 @@ class StatisticsCollector:
         num = len(self.wait_times)
         avg_wait = sum(self.wait_times) / num if num > 0 else 0.0
         avg_turn = sum(self.turnaround_times) / num if num > 0 else 0.0
+        L_system = self.lam * avg_turn if self.lam is not None else 0.0
         return {
             "average_wait_time": avg_wait,
             "average_turnaround_time": avg_turn,
             "num_jobs": num,
             "boost_events": self.boost_events,
+            "average_number_in_system": L_system,
         }
 
 
@@ -265,6 +270,7 @@ class CPUScheduler:
         s_period: float,
         io_probability: float = 0.0,
         io_rate: float = 1.0,
+        lam: float | None = None,
     ):
         """Create a scheduler with optional I/O parameters.
 
@@ -298,7 +304,7 @@ class CPUScheduler:
         # All processes in the system (for boosting)
         self.all_processes: List[Process] = []
         # Statistics collector
-        self.stats = StatisticsCollector()
+        self.stats = StatisticsCollector(lam=lam)
         # Create cores
         self.cores: List[Core] = [Core(env, self, i) for i in range(num_cpus)]
         # Launch periodic priority booster
@@ -470,8 +476,8 @@ def simulate(
 ) -> Dict[str, float]:
     """Run an MLFQ simulation with optional I/O modelling.
 
-    This function drives the discrete‑event simulation of a multi‑core CPU
-    scheduled by a Multi‑Level Feedback Queue (MLFQ). In addition to the
+    This function drives the discrete-event simulation of a multi-core CPU
+    scheduled by a Multi-Level Feedback Queue (MLFQ). In addition to the
     standard parameters controlling arrival and service rates, time quanta
     and priority boosting, optional arguments allow modelling of I/O wait
     events: each process may probabilistically yield the CPU for an I/O
@@ -521,24 +527,42 @@ def simulate(
         s_period=s_period,
         io_probability=io_probability,
         io_rate=io_rate,
+        lam=lam,
     )
     env.process(workload_generator(env, lam, mu, scheduler, simulation_time))
     env.run(until=simulation_time)
     return scheduler.stats.calculate_averages()
 
 
+def run_scenario(scenario: Dict[str, object]) -> Dict[str, object]:
+    """Run a single scenario dictionary defined in scenario.py."""
+    name = str(scenario.get("name", "scenario"))
+    params = {k: v for k, v in scenario.items() if k != "name"}
+    result = simulate(**params)
+    return {"name": name, **result}
+
+
 if __name__ == "__main__":
-    # Example usage: run a small simulation and print results
-    result = simulate(
-        num_cpus=4,
-        lam=2.0,
-        mu=1.0,
-        q1=0.05,
-        q2=0.1,
-        s_period=1.0,
-        simulation_time=100.0,
-        seed=123,
+    parser = argparse.ArgumentParser(
+        description="Run predefined MLFQ scenarios from scenario.py",
     )
-    print("Simulation results:")
-    for k, v in result.items():
-        print(f"{k}: {v:.4f}" if isinstance(v, float) else f"{k}: {v}")
+    parser.add_argument(
+        "--scenario",
+        help="Name of the scenario to run (see scenario.py). Default: run all.",
+    )
+    args = parser.parse_args()
+
+    scenarios_to_run = ALL_SCENARIOS
+    if args.scenario:
+        scenarios_to_run = [s for s in ALL_SCENARIOS if s.get("name") == args.scenario]
+        if not scenarios_to_run:
+            raise SystemExit(f"Scenario '{args.scenario}' not found in scenario.py")
+
+    print("Running scenarios from scenario.py...")
+    for scenario in scenarios_to_run:
+        outcome = run_scenario(scenario)
+        print(f"\n{outcome['name']}")
+        for metric, value in outcome.items():
+            if metric == "name":
+                continue
+            print(f"{metric}: {value:.4f}" if isinstance(value, float) else f"{metric}: {value}")
