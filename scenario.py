@@ -26,7 +26,7 @@ scenarios_validation = [
         "mu": 1.0,
         "q1": 0.05,
         "q2": 0.1,
-        "s_period": 1.0,  # very slow boosting
+        "s_period": 1.0,
         "simulation_time": 100.0,
         "io_probability": 0.0,
         "io_rate": 1.0,

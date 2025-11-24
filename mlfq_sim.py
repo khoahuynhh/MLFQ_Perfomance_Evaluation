@@ -149,7 +149,7 @@ class StatisticsCollector:
         self.lam: float | None = lam
         self.wait_times: List[float] = []
         self.turnaround_times: List[float] = []
-        self.boost_events: int = 0  # count of priority boosts
+        self.boost_events: int = 0  # count of priority boostse
 
     def record_wait_time(self, t: float) -> None:
         self.wait_times.append(t)
@@ -157,16 +157,22 @@ class StatisticsCollector:
     def record_turnaround_time(self, t: float) -> None:
         self.turnaround_times.append(t)
 
-    def calculate_averages(self) -> Dict[str, float]:
+    def calculate_averages(
+        self, simulation_time: float | None = None
+    ) -> Dict[str, float]:
         num = len(self.wait_times)
         avg_wait = sum(self.wait_times) / num if num > 0 else 0.0
         avg_turn = sum(self.turnaround_times) / num if num > 0 else 0.0
-        L_system = self.lam * avg_turn if self.lam is not None else 0.0
+        lam_eff = (
+            num / simulation_time if simulation_time and simulation_time > 0 else 0.0
+        )
+        L_system = lam_eff * avg_turn
         return {
             "average_wait_time": avg_wait,
             "average_turnaround_time": avg_turn,
             "num_jobs": num,
             "boost_events": self.boost_events,
+            "effective_arrival_rate": lam_eff,
             "average_number_in_system": L_system,
         }
 
@@ -531,7 +537,7 @@ def simulate(
     )
     env.process(workload_generator(env, lam, mu, scheduler, simulation_time))
     env.run(until=simulation_time)
-    return scheduler.stats.calculate_averages()
+    return scheduler.stats.calculate_averages(simulation_time=simulation_time)
 
 
 def run_scenario(scenario: Dict[str, object]) -> Dict[str, object]:
@@ -565,4 +571,8 @@ if __name__ == "__main__":
         for metric, value in outcome.items():
             if metric == "name":
                 continue
-            print(f"{metric}: {value:.4f}" if isinstance(value, float) else f"{metric}: {value}")
+            print(
+                f"{metric}: {value:.4f}"
+                if isinstance(value, float)
+                else f"{metric}: {value}"
+            )
